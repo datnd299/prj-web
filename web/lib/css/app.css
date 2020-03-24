@@ -1,0 +1,25 @@
+.v-btn-toggle  .v-btn.v-btn:not(:first-child) {
+    border-left-width: 0;
+}
+
+.v-btn-toggle  .v-btn.v-btn:last-child {
+    border-top-right-radius: inherit;
+    border-bottom-right-radius: inherit;
+}
+
+.v-btn-toggle--dense  .v-btn.v-btn {
+    padding: 0 8px;
+}
+
+.v-btn-toggle  .v-btn.v-btn {
+    border-radius: 0;
+    border-style: solid;
+    border-width: thin;
+  
+    box-shadow: none;
+    opacity: 0.8;
+
+}
+.kt-aside--minimize .kt-aside__brand .kt-aside__brand-logo .logo {
+    display: none;
+}
