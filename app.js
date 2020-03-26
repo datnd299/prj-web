@@ -8,11 +8,11 @@ const cors = require('cors');
 
 
 const userRoutes = require('./routes/userRoutes');
+const adminUserRoute = require('./routes/admin/user');
 const globalErrHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
 const app = express();
-var serveStatic = require('serve-static');
-app.use(serveStatic(__dirname + "/web"));
+
 // Allow Cross-Origin requests
 app.use(cors());
 
@@ -50,16 +50,13 @@ app.use(hpp());
 // Routes
 app.use('/api/v1/users', userRoutes);
 
+app.use('/api/v1/admin/users', adminUserRoute);
 
-
-
-
-app.get('/', (req, res) => res.sendFile('web/index.html',{ root: __dirname }));
 // handle undefined Routes
-// app.use('*', (req, res, next) => {
-//     const err = new AppError(404, 'fail', 'undefined route');
-//     next(err, req, res, next);
-// });
+app.use('*', (req, res, next) => {
+    const err = new AppError(404, 'fail', 'undefined route');
+    next(err, req, res, next);
+});
 
 app.use(globalErrHandler);
 
