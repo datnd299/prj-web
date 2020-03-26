@@ -12,7 +12,8 @@ const adminUserRoute = require('./routes/admin/user');
 const globalErrHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
 const app = express();
-
+var serveStatic = require('serve-static');
+app.use(serveStatic(__dirname + "/web"));
 // Allow Cross-Origin requests
 app.use(cors());
 
