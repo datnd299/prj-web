@@ -8,6 +8,7 @@ const cors = require('cors');
 
 
 const userRoutes = require('./routes/userRoutes');
+const adminUserRoute = require('./routes/admin/user');
 const globalErrHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
 const app = express();
@@ -53,11 +54,8 @@ app.use(helmet());
 // // Routes
 // app.use('/api/v1/users', userRoutes);
 
+app.use('/api/v1/admin/users', adminUserRoute);
 
-
-
-
-// app.get('/', (req, res) => res.sendFile('web/index.html',{ root: __dirname }));
 // handle undefined Routes
 // app.use('*', (req, res, next) => {
 //     const err = new AppError(404, 'fail', 'undefined route');

@@ -2,7 +2,8 @@ const {
     promisify
 } = require('util');
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+const Account = require('../models/user/account');
+const AccessToken = require('../models/access/token');
 const AppError = require('../utils/appError');
 
 
@@ -27,25 +28,29 @@ exports.login = async (req, res, next) => {
         }
         
         // 2) check if user exist and password is correct
-        const user = await User.findOne({
-            email
+        const acc = await Account.findOne({
+            $or:[{email:email},{acc_name:email}]
         }).select('+password');
+        
 
-        if (!user || !await user.correctPassword(password, user.password)) {
+        if (!acc || !await acc.correctPassword(password, acc.password)) {
             return next(new AppError(401, 'fail', 'Email or Password is wrong'), req, res, next);
         }
-
         // 3) All correct, send jwt to client
-        const token = createToken(user.id);
+        const token = createToken(acc.id);
+        await AccessToken.create({
+            token :token,
+            acc : acc
 
+        })
         // Remove the password from the output 
-        user.password = undefined;
+        acc.password = undefined;
 
         res.status(200).json({
             status: 'success',
             token,
             data: {
-                user
+                acc
             }
         });
 
@@ -53,6 +58,52 @@ exports.login = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.changePass = async (req, res, next) => {
+    try {
+        
+        const {
+            username,
+            password,
+            n_password,
+            n_password_confirm
+        } = req.body;
+       
+        
+        // 1) check if email and password exist
+        if (!username || !password) {
+            return next(new AppError(404, 'fail', 'Please provide email or password'), req, res, next);
+        }
+        if (n_password!= n_password_confirm ||!n_password) {
+            return next(new AppError(401, 'fail', 'New password is wrong'), req, res, next);
+        }
+        // 2) check if user exist and password is correct
+        const acc = await Account.findOne({
+            $or:[{email:username},{acc_name:username}]
+        }).select('+password');
+
+        if (!acc || !await acc.correctPassword(password, acc.password)) {
+            return next(new AppError(401, 'fail', 'Email or Password is wrong'), req, res, next);
+        }
+        acc.password = n_password;
+        acc.passwordConfirm = n_password_confirm;
+        await acc.save();
+        res.status(200).json({
+            status: 'success',
+            data: {
+                acc
+            }
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
+
+
+
+
 
 exports.signup = async (req, res, next) => {
 
@@ -87,7 +138,10 @@ exports.protect = async (req, res, next) => {
     try {
         // 1) check if the token is there
         let token;
+        
+        
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            
             token = req.headers.authorization.split(' ')[1];
         }
         if (!token) {
@@ -99,12 +153,12 @@ exports.protect = async (req, res, next) => {
         const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
         // 3) check if the user is exist (not deleted)
-        const user = await User.findById(decode.id);
-        if (!user) {
+        const acc = await Account.findById(decode.id);
+        if (!acc) {
             return next(new AppError(401, 'fail', 'This user is no longer exist'), req, res, next);
         }
 
-        req.user = user;
+        req.acc = acc;
         next();
 
     } catch (err) {
@@ -115,7 +169,7 @@ exports.protect = async (req, res, next) => {
 // Authorization check if the user have rights to do this action
 exports.restrictTo = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
+        if (!roles.includes(req.acc.role)) {
             return next(new AppError(403, 'fail', 'You are not allowed to do this action'), req, res, next);
         }
         next();
